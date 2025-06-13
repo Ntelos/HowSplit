@@ -137,8 +137,6 @@ export default function HomePage() {
       const amountToTransfer = Math.min(-currentDebtor.amount, currentCreditor.amount);
 
       if (amountToTransfer < 0.01) {
-        // If the amount to transfer is negligible, advance the index of the party whose balance is already negligible.
-        // At least one of these conditions must be true if amountToTransfer < 0.01.
         let advanced = false;
         if (Math.abs(currentDebtor.amount) < 0.01) {
           debtorIndex++;
@@ -148,9 +146,6 @@ export default function HomePage() {
           creditorIndex++;
           advanced = true;
         }
-        // Failsafe: if for some reason neither advanced (e.g. tiny rounding preventing abs < 0.01 but amountToTransfer is still tiny)
-        // advance the one with the smaller magnitude to prevent potential infinite loops with tiny unresolvable amounts.
-        // This should ideally not be hit if the above logic is sound with floating point numbers.
         if (!advanced) {
             if (Math.abs(currentDebtor.amount) < Math.abs(currentCreditor.amount)) {
                 debtorIndex++;
@@ -174,11 +169,9 @@ export default function HomePage() {
         });
       }
 
-      // Update amounts in the lists directly
       currentDebtor.amount += amountToTransfer;
       currentCreditor.amount -= amountToTransfer;
 
-      // Advance indices if balances are now settled (or close to zero)
       if (Math.abs(currentDebtor.amount) < 0.01) {
         debtorIndex++;
       }
@@ -246,7 +239,12 @@ export default function HomePage() {
           <div className="space-y-8">
             <HousemateManager housemates={housemates} onAddHousemate={addHousemate} onRemoveHousemate={removeHousemate} />
             <ExpenseForm housemates={housemates} onAddExpense={addExpense} />
-            <ExpenseHistory expenses={expenses} housemates={housemates} onDeleteExpense={deleteExpense} />
+            <ExpenseHistory 
+              expenses={expenses} 
+              payments={payments} 
+              housemates={housemates} 
+              onDeleteExpense={deleteExpense} 
+            />
           </div>
           <div className="sticky top-8">
             <BalanceOverview 
