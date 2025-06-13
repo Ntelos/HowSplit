@@ -11,6 +11,7 @@ import { Trash2, ListChecks, ReceiptText, ArrowRightLeft, CalendarIcon, XCircle 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, endOfDay } from "date-fns";
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface DisplayTransaction {
   id: string;
@@ -33,6 +34,7 @@ interface ExpenseHistoryProps {
 export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense }: ExpenseHistoryProps) {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const { selectedCurrency } = useSettings();
 
   const getHousemateName = (id: string): string => {
     const housemate = housemates.find(hm => hm.id === id);
@@ -172,7 +174,7 @@ export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense
                     </TableCell>
                     <TableCell className="font-medium">{transaction.descriptionText}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{transaction.detailsText}</TableCell>
-                    <TableCell className="text-right">${transaction.amount.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">{selectedCurrency.symbol}{transaction.amount.toFixed(2)}</TableCell>
                     <TableCell className="text-right">
                       {transaction.isDeletable && (
                         <Button
@@ -195,4 +197,3 @@ export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense
     </Card>
   );
 }
-

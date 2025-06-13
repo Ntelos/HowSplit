@@ -14,6 +14,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { NotebookText, CalendarIcon, Wallet, Users, CirclePlus } from 'lucide-react';
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface ExpenseFormProps {
   housemates: Housemate[];
@@ -26,8 +27,9 @@ export function ExpenseForm({ housemates, onAddExpense }: ExpenseFormProps) {
   const [payerId, setPayerId] = useState<string | undefined>(undefined);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [payerSelectKey, setPayerSelectKey] = useState(0); // Key to force reset Select
+  const [payerSelectKey, setPayerSelectKey] = useState(0);
   const { toast } = useToast();
+  const { selectedCurrency } = useSettings();
 
   const handleParticipantChange = (housemateId: string) => {
     setParticipantIds((prev) =>
@@ -69,13 +71,13 @@ export function ExpenseForm({ housemates, onAddExpense }: ExpenseFormProps) {
       date,
     });
 
-    const toastDescription = description; // Capture description before reset
+    const toastDescription = description; 
     setDescription('');
     setAmount('');
     setPayerId(undefined); 
     setParticipantIds([]);
     setDate(new Date());
-    setPayerSelectKey(prevKey => prevKey + 1); // Increment key to force Select re-render
+    setPayerSelectKey(prevKey => prevKey + 1); 
 
     toast({ title: "Expense Added", description: `${toastDescription} successfully added.` });
   };
@@ -121,7 +123,7 @@ export function ExpenseForm({ housemates, onAddExpense }: ExpenseFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="amount" className="block text-sm font-medium mb-1">Amount ($)</Label>
+              <Label htmlFor="amount" className="block text-sm font-medium mb-1">Amount ({selectedCurrency.symbol})</Label>
               <Input
                 id="amount"
                 type="number"

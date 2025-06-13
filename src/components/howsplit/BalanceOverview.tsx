@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Scale, HandCoins, ArrowRight, CheckCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface BalanceOverviewProps {
   debts: Debt[];
@@ -24,7 +25,7 @@ export function BalanceOverview({
   paymentsCount,
   onAddPayment
 }: BalanceOverviewProps) {
-  
+  const { selectedCurrency } = useSettings();
   const totalTransactions = expensesCount + paymentsCount;
 
   const handleSettleSpecificDebt = (debt: Debt) => {
@@ -87,7 +88,7 @@ export function BalanceOverview({
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="font-semibold text-primary">
-                      ${debt.amount.toFixed(2)}
+                      {selectedCurrency.symbol}{debt.amount.toFixed(2)}
                     </span>
                     <Button 
                       variant="outline" 
@@ -110,7 +111,7 @@ export function BalanceOverview({
             onClick={onClearAllTransactions} 
             className="w-full" 
             variant="default" 
-            disabled={totalTransactions === 0 && debts.length > 0} // Keep disabled if no transactions, unless there are somehow debts (should not happen)
+            disabled={totalTransactions === 0 && debts.length > 0}
           >
             <HandCoins className="w-4 h-4 mr-2" />
             {mainButtonText}
@@ -120,4 +121,3 @@ export function BalanceOverview({
     </Card>
   );
 }
-

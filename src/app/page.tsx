@@ -9,6 +9,7 @@ import { ExpenseForm } from '@/components/howsplit/ExpenseForm';
 import { BalanceOverview } from '@/components/howsplit/BalanceOverview';
 import { ExpenseHistory } from '@/components/howsplit/ExpenseHistory';
 import { useToast } from "@/hooks/use-toast";
+import { useSettings } from '@/contexts/SettingsContext';
 
 export default function HomePage() {
   const [housemates, setHousemates] = useState<Housemate[]>([]);
@@ -16,6 +17,7 @@ export default function HomePage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const { toast } = useToast();
+  const { selectedCurrency } = useSettings();
 
   const addHousemate = (name: string) => {
     const newHousemate: Housemate = { id: crypto.randomUUID(), name };
@@ -83,7 +85,7 @@ export default function HomePage() {
     setPayments((prev) => [...prev, newPayment]);
     toast({
       title: "Payment Recorded",
-      description: `Payment of $${amount.toFixed(2)} from ${fromHousemate.name} to ${toHousemate.name} recorded.`,
+      description: `Payment of ${selectedCurrency.symbol}${amount.toFixed(2)} from ${fromHousemate.name} to ${toHousemate.name} recorded.`,
     });
   };
 
@@ -116,7 +118,6 @@ export default function HomePage() {
 
     housemates.forEach(hm => {
       const balance = balances[hm.id];
-      // Using a small epsilon to handle floating point inaccuracies
       if (balance < -0.001) {
         debtorsList.push({ id: hm.id, amount: balance });
       } else if (balance > 0.001) {
@@ -124,8 +125,8 @@ export default function HomePage() {
       }
     });
 
-    debtorsList.sort((a, b) => a.amount - b.amount); // Most negative first
-    creditorsList.sort((a, b) => b.amount - a.amount); // Most positive first
+    debtorsList.sort((a, b) => a.amount - b.amount); 
+    creditorsList.sort((a, b) => b.amount - a.amount); 
 
     const newDebts: Debt[] = [];
     let debtorIndex = 0;
@@ -137,20 +138,23 @@ export default function HomePage() {
 
       const amountToTransfer = Math.min(-currentDebtor.amount, currentCreditor.amount);
 
-
-       if (amountToTransfer < 0.01) {
-         if (Math.abs(currentDebtor.amount) < 0.01) debtorIndex++;
-         if (Math.abs(currentCreditor.amount) < 0.01) creditorIndex++;
-         // Check if pointers are still valid before accessing amount
-         const nextDebtorAmount = debtorIndex < debtorsList.length ? debtorsList[debtorIndex].amount : 0;
-         const nextCreditorAmount = creditorIndex < creditorsList.length ? creditorsList[creditorIndex].amount : 0;
-
-         if (Math.abs(nextDebtorAmount) >= 0.01 && Math.abs(nextCreditorAmount) >= 0.01) {
-            break;
+      if (amountToTransfer < 0.01) {
+         let advanced = false;
+         if (Math.abs(currentDebtor.amount) < 0.01) {
+            debtorIndex++;
+            advanced = true;
          }
+         if (Math.abs(currentCreditor.amount) < 0.01) {
+            creditorIndex++;
+            advanced = true;
+         }
+         // if (!advanced) { // This block was deemed unreachable and removed for simplification
+         //    break; 
+         // }
+         if (debtorIndex >= debtorsList.length || creditorIndex >= creditorsList.length) break;
          continue;
       }
-
+      
       const debtorHousemate = housemates.find(hm => hm.id === currentDebtor.id);
       const creditorHousemate = housemates.find(hm => hm.id === currentCreditor.id);
 
@@ -163,11 +167,9 @@ export default function HomePage() {
           amount: amountToTransfer,
         });
       }
-
-      // Directly update the amounts in the lists
+      
       debtorsList[debtorIndex].amount += amountToTransfer;
       creditorsList[creditorIndex].amount -= amountToTransfer;
-
 
       if (Math.abs(debtorsList[debtorIndex].amount) < 0.01) {
         debtorIndex++;
