@@ -26,6 +26,7 @@ export function ExpenseForm({ housemates, onAddExpense }: ExpenseFormProps) {
   const [payerId, setPayerId] = useState<string | undefined>(undefined);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [payerSelectKey, setPayerSelectKey] = useState(0); // Key to force reset Select
   const { toast } = useToast();
 
   const handleParticipantChange = (housemateId: string) => {
@@ -68,12 +69,15 @@ export function ExpenseForm({ housemates, onAddExpense }: ExpenseFormProps) {
       date,
     });
 
+    const toastDescription = description; // Capture description before reset
     setDescription('');
     setAmount('');
-    setPayerId(undefined); // This line resets the payerId
+    setPayerId(undefined); 
     setParticipantIds([]);
     setDate(new Date());
-    toast({ title: "Expense Added", description: `${description} successfully added.` });
+    setPayerSelectKey(prevKey => prevKey + 1); // Increment key to force Select re-render
+
+    toast({ title: "Expense Added", description: `${toastDescription} successfully added.` });
   };
   
   if (housemates.length === 0) {
@@ -158,7 +162,7 @@ export function ExpenseForm({ housemates, onAddExpense }: ExpenseFormProps) {
             <Label htmlFor="payer" className="block text-sm font-medium mb-1 flex items-center">
               <Wallet className="w-4 h-4 mr-2"/> Who Paid?
             </Label>
-            <Select value={payerId} onValueChange={setPayerId}>
+            <Select key={payerSelectKey} value={payerId} onValueChange={setPayerId}>
               <SelectTrigger id="payer" aria-label="Select Payer">
                 <SelectValue placeholder="Select payer" />
               </SelectTrigger>
