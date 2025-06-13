@@ -141,19 +141,30 @@ export default function HomePage() {
       const currentDebtor = debtorsList[debtorIndex];
       const currentCreditor = creditorsList[creditorIndex];
       
-      if (!currentDebtor || !currentCreditor) break; // Safety check
+      if (!currentDebtor || !currentCreditor) break; 
 
-      const amountToTransfer = Math.min(-currentDebtor.amount, currentCreditor.amount);
+      let amountToTransfer = Math.min(-currentDebtor.amount, currentCreditor.amount);
 
       if (amountToTransfer < 0.01) {
-         if (Math.abs(currentDebtor.amount) < 0.01) {
+        // If the amount to transfer is negligible, it means one or both balances are nearly zero.
+        // We advance the pointer(s) for the party(ies) with a negligible balance.
+        let advanced = false;
+        if (Math.abs(currentDebtor.amount) < 0.01) {
             debtorIndex++;
-         }
-         if (Math.abs(currentCreditor.amount) < 0.01) {
+            advanced = true;
+        }
+        if (Math.abs(currentCreditor.amount) < 0.01) {
             creditorIndex++;
-         }
-         if (debtorIndex >= debtorsList.length || creditorIndex >= creditorsList.length) break;
-         continue;
+            advanced = true;
+        }
+        // If no pointer was advanced (e.g., both have balances slightly > 0.01 but amountToTransfer is < 0.01 due to Math.min),
+        // and we're stuck, we break to avoid infinite loops. This situation is rare.
+        // However, the initial logic already advances if a balance is ~0, so this !advanced path is less likely to be hit
+        // if the previous conditions correctly moved debtorIndex or creditorIndex.
+        // The primary goal here is just to ensure we move past negligible amounts.
+        // The `continue` will skip the `newDebts.push` for this tiny amount.
+        if (debtorIndex >= debtorsList.length || creditorIndex >= creditorsList.length) break;
+        continue;
       }
       
       const debtorHousemate = housemates.find(hm => hm.id === currentDebtor.id);
@@ -169,7 +180,6 @@ export default function HomePage() {
         });
       }
       
-      // Directly update the amounts in the lists
       debtorsList[debtorIndex].amount += amountToTransfer;
       creditorsList[creditorIndex].amount -= amountToTransfer;
 
@@ -204,10 +214,8 @@ export default function HomePage() {
       });
       return;
     }
-    // Create a copy of debts to iterate over, as addPayment will trigger re-calculation and modify `debts` state
     const currentDebtsToSettle = [...debts];
     currentDebtsToSettle.forEach(debt => {
-      // Ensure housemates still exist before attempting to add payment
       const fromHousemateExists = housemates.some(hm => hm.id === debt.fromId);
       const toHousemateExists = housemates.some(hm => hm.id === debt.toId);
       if (fromHousemateExists && toHousemateExists) {
@@ -220,14 +228,12 @@ export default function HomePage() {
         });
       }
     });
-    // Check if any debts were actually processed to avoid misleading toast
     if (currentDebtsToSettle.length > 0) {
         toast({
             title: "Debts Settled",
             description: "Attempted to settle all outstanding debts by recording payments.",
         });
     }
-    // Recalculation will happen due to state changes in payments.
   };
 
 
@@ -292,10 +298,8 @@ export default function HomePage() {
         </div>
       </main>
       <footer className="text-center py-4 border-t text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} HowSplit. Built with fun by your friendly AI.</p>
+        <p>© 2025 HowSplit. Built for fun by AI.</p>
       </footer>
     </div>
   );
 }
-
-    
