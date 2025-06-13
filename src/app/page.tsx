@@ -7,6 +7,7 @@ import { Header } from '@/components/howsplit/Header';
 import { HousemateManager } from '@/components/howsplit/HousemateManager';
 import { ExpenseForm } from '@/components/howsplit/ExpenseForm';
 import { BalanceOverview } from '@/components/howsplit/BalanceOverview';
+import { ExpenseHistory } from '@/components/howsplit/ExpenseHistory';
 import { useToast } from "@/hooks/use-toast";
 
 export default function HomePage() {
@@ -49,6 +50,17 @@ export default function HomePage() {
   const addExpense = (expenseData: Omit<Expense, 'id'>) => {
     const newExpense: Expense = { ...expenseData, id: crypto.randomUUID() };
     setExpenses((prev) => [...prev, newExpense]);
+  };
+
+  const deleteExpense = (id: string) => {
+    const expenseToDelete = expenses.find(exp => exp.id === id);
+    setExpenses((prev) => prev.filter((exp) => exp.id !== id));
+    if (expenseToDelete) {
+      toast({
+        title: "Expense Deleted",
+        description: `Expense "${expenseToDelete.description}" has been deleted.`,
+      });
+    }
   };
 
   const addPayment = (fromId: string, toId: string, amount: number) => {
@@ -95,8 +107,8 @@ export default function HomePage() {
     });
 
     payments.forEach(payment => {
-      balances[payment.fromId] = (balances[payment.fromId] || 0) + payment.amount; // Person who paid sees their balance improve (less negative or more positive)
-      balances[payment.toId] = (balances[payment.toId] || 0) - payment.amount;     // Person who received sees their balance decrease (less positive or more negative)
+      balances[payment.fromId] = (balances[payment.fromId] || 0) + payment.amount; 
+      balances[payment.toId] = (balances[payment.toId] || 0) - payment.amount;    
     });
 
     const debtorsList: { id: string; amount: number }[] = [];
@@ -104,15 +116,15 @@ export default function HomePage() {
 
     housemates.forEach(hm => {
       const balance = balances[hm.id];
-      if (balance < -0.001) { // Epsilon for float comparison
+      if (balance < -0.001) { 
         debtorsList.push({ id: hm.id, amount: balance });
       } else if (balance > 0.001) {
         creditorsList.push({ id: hm.id, amount: balance });
       }
     });
     
-    debtorsList.sort((a, b) => a.amount - b.amount); // Most negative first
-    creditorsList.sort((a, b) => b.amount - a.amount); // Most positive first
+    debtorsList.sort((a, b) => a.amount - b.amount); 
+    creditorsList.sort((a, b) => b.amount - a.amount); 
 
     const newDebts: Debt[] = [];
     let debtorIndex = 0;
@@ -171,7 +183,6 @@ export default function HomePage() {
     });
   };
 
-  // Load state from localStorage on initial render
   useEffect(() => {
     const storedHousemates = localStorage.getItem('howsplit_housemates');
     if (storedHousemates) {
@@ -195,7 +206,6 @@ export default function HomePage() {
     }
   }, []);
 
-  // Save state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('howsplit_housemates', JSON.stringify(housemates));
   }, [housemates]);
@@ -217,6 +227,7 @@ export default function HomePage() {
           <div className="space-y-8">
             <HousemateManager housemates={housemates} onAddHousemate={addHousemate} onRemoveHousemate={removeHousemate} />
             <ExpenseForm housemates={housemates} onAddExpense={addExpense} />
+            <ExpenseHistory expenses={expenses} housemates={housemates} onDeleteExpense={deleteExpense} />
           </div>
           <div className="sticky top-8">
             <BalanceOverview 
