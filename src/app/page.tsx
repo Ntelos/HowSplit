@@ -131,21 +131,38 @@ export default function HomePage() {
     let creditorIndex = 0;
 
     while (debtorIndex < debtorsList.length && creditorIndex < creditorsList.length) {
-      const debtor = debtorsList[debtorIndex];
-      const creditor = creditorsList[creditorIndex];
-      const amountToTransfer = Math.min(-debtor.amount, creditor.amount);
+      const currentDebtor = debtorsList[debtorIndex];
+      const currentCreditor = creditorsList[creditorIndex];
+      
+      const amountToTransfer = Math.min(-currentDebtor.amount, currentCreditor.amount);
 
-      if (amountToTransfer < 0.01) { 
-         if (Math.abs(debtor.amount) < 0.01) debtorIndex++;
-         if (Math.abs(creditor.amount) < 0.01) creditorIndex++;
-         if (Math.abs(debtor.amount) >= 0.01 && Math.abs(creditor.amount) >= 0.01) {
-            if (Math.abs(debtor.amount) < Math.abs(creditor.amount)) debtorIndex++; else creditorIndex++;
-         }
-         continue;
+      if (amountToTransfer < 0.01) {
+        // If the amount to transfer is negligible, advance the index of the party whose balance is already negligible.
+        // At least one of these conditions must be true if amountToTransfer < 0.01.
+        let advanced = false;
+        if (Math.abs(currentDebtor.amount) < 0.01) {
+          debtorIndex++;
+          advanced = true;
+        }
+        if (Math.abs(currentCreditor.amount) < 0.01) {
+          creditorIndex++;
+          advanced = true;
+        }
+        // Failsafe: if for some reason neither advanced (e.g. tiny rounding preventing abs < 0.01 but amountToTransfer is still tiny)
+        // advance the one with the smaller magnitude to prevent potential infinite loops with tiny unresolvable amounts.
+        // This should ideally not be hit if the above logic is sound with floating point numbers.
+        if (!advanced) {
+            if (Math.abs(currentDebtor.amount) < Math.abs(currentCreditor.amount)) {
+                debtorIndex++;
+            } else {
+                creditorIndex++;
+            }
+        }
+        continue; 
       }
       
-      const debtorHousemate = housemates.find(hm => hm.id === debtor.id);
-      const creditorHousemate = housemates.find(hm => hm.id === creditor.id);
+      const debtorHousemate = housemates.find(hm => hm.id === currentDebtor.id);
+      const creditorHousemate = housemates.find(hm => hm.id === currentCreditor.id);
 
       if (debtorHousemate && creditorHousemate) {
         newDebts.push({
@@ -157,13 +174,15 @@ export default function HomePage() {
         });
       }
 
-      debtor.amount += amountToTransfer;
-      creditor.amount -= amountToTransfer;
+      // Update amounts in the lists directly
+      currentDebtor.amount += amountToTransfer;
+      currentCreditor.amount -= amountToTransfer;
 
-      if (Math.abs(debtor.amount) < 0.01) {
+      // Advance indices if balances are now settled (or close to zero)
+      if (Math.abs(currentDebtor.amount) < 0.01) {
         debtorIndex++;
       }
-      if (Math.abs(creditor.amount) < 0.01) {
+      if (Math.abs(currentCreditor.amount) < 0.01) {
         creditorIndex++;
       }
     }
