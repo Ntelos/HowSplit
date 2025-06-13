@@ -73,6 +73,11 @@ export default function HomePage() {
       toast({ title: "Error", description: "Invalid housemate ID for payment.", variant: "destructive" });
       return;
     }
+     if (amount <= 0) {
+      toast({ title: "Error", description: "Payment amount must be positive.", variant: "destructive" });
+      return;
+    }
+
 
     const newPayment: Payment = {
       id: crypto.randomUUID(),
@@ -118,9 +123,9 @@ export default function HomePage() {
 
     housemates.forEach(hm => {
       const balance = balances[hm.id];
-      if (balance < -0.001) {
+      if (balance < -0.001) { // Owed amount, rounded slightly to avoid floating point issues
         debtorsList.push({ id: hm.id, amount: balance });
-      } else if (balance > 0.001) {
+      } else if (balance > 0.001) { // Due amount
         creditorsList.push({ id: hm.id, amount: balance });
       }
     });
@@ -135,22 +140,18 @@ export default function HomePage() {
     while (debtorIndex < debtorsList.length && creditorIndex < creditorsList.length) {
       const currentDebtor = debtorsList[debtorIndex];
       const currentCreditor = creditorsList[creditorIndex];
+      
+      if (!currentDebtor || !currentCreditor) break; // Safety check
 
       const amountToTransfer = Math.min(-currentDebtor.amount, currentCreditor.amount);
 
       if (amountToTransfer < 0.01) {
-         let advanced = false;
          if (Math.abs(currentDebtor.amount) < 0.01) {
             debtorIndex++;
-            advanced = true;
          }
          if (Math.abs(currentCreditor.amount) < 0.01) {
             creditorIndex++;
-            advanced = true;
          }
-         // if (!advanced) { // This block was deemed unreachable and removed for simplification
-         //    break; 
-         // }
          if (debtorIndex >= debtorsList.length || creditorIndex >= creditorsList.length) break;
          continue;
       }
@@ -168,6 +169,7 @@ export default function HomePage() {
         });
       }
       
+      // Directly update the amounts in the lists
       debtorsList[debtorIndex].amount += amountToTransfer;
       creditorsList[creditorIndex].amount -= amountToTransfer;
 
@@ -185,7 +187,7 @@ export default function HomePage() {
     calculateAndSetDebts();
   }, [calculateAndSetDebts]);
 
-  const clearAllTransactionsHandler = () => {
+  const handleClearHistory = () => {
     setExpenses([]);
     setPayments([]);
     toast({
@@ -193,6 +195,41 @@ export default function HomePage() {
       description: "All expenses and payments have been cleared.",
     });
   };
+
+  const handleSettleAllDebts = () => {
+    if (debts.length === 0) {
+      toast({
+        title: "No Debts",
+        description: "There are no outstanding debts to settle.",
+      });
+      return;
+    }
+    // Create a copy of debts to iterate over, as addPayment will trigger re-calculation and modify `debts` state
+    const currentDebtsToSettle = [...debts];
+    currentDebtsToSettle.forEach(debt => {
+      // Ensure housemates still exist before attempting to add payment
+      const fromHousemateExists = housemates.some(hm => hm.id === debt.fromId);
+      const toHousemateExists = housemates.some(hm => hm.id === debt.toId);
+      if (fromHousemateExists && toHousemateExists) {
+        addPayment(debt.fromId, debt.toId, debt.amount);
+      } else {
+         toast({
+            title: "Skipped Settlement",
+            description: `Could not settle debt from ${debt.from} to ${debt.to} as one or both housemates no longer exist.`,
+            variant: "destructive"
+        });
+      }
+    });
+    // Check if any debts were actually processed to avoid misleading toast
+    if (currentDebtsToSettle.length > 0) {
+        toast({
+            title: "Debts Settled",
+            description: "Attempted to settle all outstanding debts by recording payments.",
+        });
+    }
+    // Recalculation will happen due to state changes in payments.
+  };
+
 
   useEffect(() => {
     const storedHousemates = localStorage.getItem('howsplit_housemates');
@@ -235,9 +272,10 @@ export default function HomePage() {
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="space-y-8">
-          <BalanceOverview
+           <BalanceOverview
             debts={debts}
-            onClearAllTransactions={clearAllTransactionsHandler}
+            onSettleAllDebts={handleSettleAllDebts}
+            onClearHistory={handleClearHistory}
             housemates={housemates}
             expensesCount={expenses.length}
             paymentsCount={payments.length}
@@ -259,3 +297,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    

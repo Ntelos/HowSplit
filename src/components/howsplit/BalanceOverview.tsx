@@ -10,7 +10,8 @@ import { useSettings } from '@/contexts/SettingsContext';
 
 interface BalanceOverviewProps {
   debts: Debt[];
-  onClearAllTransactions: () => void;
+  onSettleAllDebts: () => void;
+  onClearHistory: () => void;
   housemates: Housemate[];
   expensesCount: number;
   paymentsCount: number;
@@ -19,7 +20,8 @@ interface BalanceOverviewProps {
 
 export function BalanceOverview({ 
   debts, 
-  onClearAllTransactions, 
+  onSettleAllDebts,
+  onClearHistory,
   housemates, 
   expensesCount, 
   paymentsCount,
@@ -31,15 +33,6 @@ export function BalanceOverview({
   const handleSettleSpecificDebt = (debt: Debt) => {
     onAddPayment(debt.fromId, debt.toId, debt.amount);
   };
-
-  let mainButtonText = "Mark All as Settled";
-  if (debts.length === 0) {
-    if (totalTransactions > 0) {
-      mainButtonText = "Clear History";
-    } else {
-      mainButtonText = "All Settled!";
-    }
-  }
 
   const expenseText = expensesCount === 1 ? `${expensesCount} expense` : `${expensesCount} expenses`;
   const settlementText = paymentsCount === 1 ? `${paymentsCount} settlement` : `${paymentsCount} settlements`;
@@ -53,6 +46,30 @@ export function BalanceOverview({
     descriptionText = `Summary of balances based on ${settlementText}.`;
   } else {
     descriptionText = "No transactions recorded yet. Add expenses or payments to see balances.";
+  }
+
+  let mainButtonText: string;
+  let mainButtonOnClick: () => void;
+  let isMainButtonDisabled: boolean = false;
+
+  if (housemates.length === 0) {
+    mainButtonText = "Add Housemates First";
+    mainButtonOnClick = () => {}; // No-op
+    isMainButtonDisabled = true;
+  } else if (debts.length > 0) {
+    mainButtonText = "Mark All as Settled";
+    mainButtonOnClick = onSettleAllDebts;
+    isMainButtonDisabled = false;
+  } else { // debts.length === 0
+    if (totalTransactions > 0) {
+      mainButtonText = "Clear History";
+      mainButtonOnClick = onClearHistory;
+      isMainButtonDisabled = false;
+    } else { // totalTransactions === 0
+      mainButtonText = "All Settled!";
+      mainButtonOnClick = () => {}; // No-op
+      isMainButtonDisabled = true;
+    }
   }
 
   return (
@@ -69,7 +86,7 @@ export function BalanceOverview({
       <CardContent>
         {housemates.length === 0 ? (
            <p className="text-muted-foreground text-center py-4">Add housemates to calculate balances.</p>
-        ) : totalTransactions === 0 ? (
+        ) : totalTransactions === 0 && debts.length === 0 ? ( // Ensure debts are also zero for this message
           <p className="text-muted-foreground text-center py-4">Add some expenses or payments to see the balances.</p>
         ) : debts.length === 0 ? (
           <p className="text-center py-4 text-green-600 font-medium">All settled up! No outstanding debts.</p>
@@ -78,7 +95,7 @@ export function BalanceOverview({
             <ul className="space-y-3 pr-4">
               {debts.map((debt, index) => (
                 <li
-                  key={index}
+                  key={`${debt.fromId}-${debt.toId}-${debt.amount}-${index}`} // More robust key
                   className="flex items-center justify-between p-3 bg-secondary/50 rounded-md"
                 >
                   <div className="flex items-center">
@@ -105,13 +122,14 @@ export function BalanceOverview({
           </ScrollArea>
         )}
       </CardContent>
-      {(totalTransactions > 0) && (
+      {/* Show footer if there are housemates AND (either debts to settle OR history to clear) */}
+      {(housemates.length > 0 && (debts.length > 0 || totalTransactions > 0)) && (
         <CardFooter>
           <Button 
-            onClick={onClearAllTransactions} 
+            onClick={mainButtonOnClick} 
             className="w-full" 
             variant="default" 
-            disabled={totalTransactions === 0 && debts.length > 0}
+            disabled={isMainButtonDisabled}
           >
             <HandCoins className="w-4 h-4 mr-2" />
             {mainButtonText}
@@ -121,3 +139,5 @@ export function BalanceOverview({
     </Card>
   );
 }
+
+    
