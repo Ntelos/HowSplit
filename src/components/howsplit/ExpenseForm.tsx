@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Housemate, Expense } from '@/types';
@@ -69,7 +70,7 @@ export function ExpenseForm({ housemates, onAddExpense }: ExpenseFormProps) {
 
     setDescription('');
     setAmount('');
-    setPayerId(undefined); // Reset payerId here
+    setPayerId(undefined); // This line resets the payerId
     setParticipantIds([]);
     setDate(new Date());
     toast({ title: "Expense Added", description: `${description} successfully added.` });
