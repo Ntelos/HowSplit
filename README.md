@@ -1,5 +1,111 @@
-# Firebase Studio
 
-This is a NextJS starter in Firebase Studio.
+# HowSplit - Effortless Expense Sharing
 
-To get started, take a look at src/app/page.tsx.
+HowSplit is a user-friendly web application designed to simplify the process of splitting household expenses among roommates or group members. It provides a clear and intuitive interface for tracking who paid for what, who participated in each expense, and calculates who owes whom to ensure fairness and transparency.
+
+This application was built as a demonstration project with assistance from AI, showcasing modern web development practices with Next.js and ShadCN UI.
+
+## ✨ Key Features
+
+*   **Housemate Management**: Easily add and remove members of your household.
+*   **Expense Tracking**: Record expenses with details like description, amount, who paid, and who participated.
+*   **Automatic Debt Calculation**: HowSplit automatically calculates the simplest way to settle debts among housemates.
+*   **Payment Recording**: Log payments made between housemates to clear debts.
+*   **Balance Overview**: Get a clear summary of who owes whom and the amounts involved.
+*   **Transaction History**: View a detailed log of all expenses and payments, filterable by date.
+*   **Theme Customization**: Switch between light, dark, or system-default themes.
+*   **Currency Selection**: Choose your preferred currency for displaying all monetary values.
+*   **Responsive Design**: Mobile-friendly layout for easy use on any device.
+*   **Local Data Storage**: All data is stored locally in your browser, requiring no account or internet connection after initial load.
+
+## 🛠️ Technology Stack
+
+*   **Framework**: [Next.js](https://nextjs.org/) (App Router)
+*   **UI Components**: [ShadCN UI](https://ui.shadcn.com/)
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+*   **Language**: [TypeScript](https://www.typescriptlang.org/)
+*   **Icons**: [Lucide React](https://lucide.dev/)
+*   **State Management**: React Hooks (`useState`, `useEffect`, `useContext`)
+*   **Date Handling**: [date-fns](https://date-fns.org/)
+
+## 🚀 Getting Started
+
+1.  **Clone the repository (if applicable)**:
+    ```bash
+    git clone <repository-url>
+    cd <repository-directory>
+    ```
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    # or
+    # yarn install
+    # or
+    # pnpm install
+    ```
+3.  **Run the development server**:
+    ```bash
+    npm run dev
+    # or
+    # yarn dev
+    # or
+    # pnpm dev
+    ```
+    The application will typically be available at `http://localhost:9002`.
+
+## 📋 How to Use
+
+1.  **Add Housemates**:
+    *   Navigate to the "Household Members" section.
+    *   Enter the name of each housemate and click "Add".
+
+2.  **Record Expenses**:
+    *   Go to the "Add New Expense" section.
+    *   Fill in the expense description, amount, and date.
+    *   Select who paid for the expense.
+    *   Check the boxes for all housemates who participated in (should share) the expense.
+    *   Click "Add Expense".
+
+3.  **View Balances**:
+    *   The "Balance Overview" tile will automatically update to show who owes whom.
+    *   You can see specific debt amounts (e.g., "Alice owes Bob $10").
+
+4.  **Settle Debts**:
+    *   **Individually**: In the "Balance Overview", click "Settle" next to a specific debt to record it as a payment.
+    *   **All at Once**: If there are outstanding debts, click "Mark All as Settled" in the "Balance Overview" to record payments for all current debts. This will update the balances accordingly.
+
+5.  **Review History**:
+    *   The "Transaction History" tile lists all recorded expenses and settlements.
+    *   You can filter transactions by date.
+    *   Expenses can be deleted from the history (note: payments made to settle debts cannot be directly deleted this way; they are cleared when history is cleared or by new expenses re-balancing the debts).
+
+6.  **Customize Settings**:
+    *   Click the cog (⚙️) icon in the header.
+    *   Choose your preferred theme (Light/Dark/System).
+    *   Select your desired currency. Settings are saved locally.
+
+## 💾 Data Storage
+
+HowSplit uses your browser's **`localStorage`** to save all application data. This includes:
+*   Housemates
+*   Expenses
+*   Payments
+*   Currency preference
+
+**Implications**:
+*   **No Account Needed**: Data is stored locally, so no sign-up is required.
+*   **Device-Specific**: Data is tied to the browser and device you are using. It won't sync across different devices or browsers.
+*   **Persistence**: Data remains available even if you close your browser or shut down your computer, as long as you use the same browser on the same device and don't clear its `localStorage`.
+*   **Data Deletion**: Clearing your browser's cache or site data for this application will erase all stored information.
+
+## 🤝 Contributing
+
+This project is primarily a demonstration and learning tool. While contributions are not actively sought, feel free to fork the repository, experiment, and learn from the codebase.
+
+## 📄 License
+
+This project is open-source and available under the [MIT License](LICENSE.md) (assuming you'll add one - if not, you can remove this line or specify otherwise).
+
+---
+
+Built with fun and curiosity by AI in Firebase Studio!
