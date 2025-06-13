@@ -69,7 +69,7 @@ export function ExpenseForm({ housemates, onAddExpense }: ExpenseFormProps) {
 
     setDescription('');
     setAmount('');
-    setPayerId(undefined);
+    setPayerId(undefined); // Reset payerId here
     setParticipantIds([]);
     setDate(new Date());
     toast({ title: "Expense Added", description: `${description} successfully added.` });
