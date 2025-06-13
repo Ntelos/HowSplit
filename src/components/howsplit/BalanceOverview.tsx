@@ -1,23 +1,44 @@
+
 "use client";
 
 import type { Debt, Housemate } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
-import { Scale, HandCoins, ArrowRight } from 'lucide-react';
+import { Scale, HandCoins, ArrowRight, CheckCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface BalanceOverviewProps {
   debts: Debt[];
-  onSettleDebts: () => void;
+  onClearAllTransactions: () => void;
   housemates: Housemate[];
   expensesCount: number;
+  paymentsCount: number;
+  onAddPayment: (fromId: string, toId: string, amount: number) => void;
 }
 
-export function BalanceOverview({ debts, onSettleDebts, housemates, expensesCount }: BalanceOverviewProps) {
+export function BalanceOverview({ 
+  debts, 
+  onClearAllTransactions, 
+  housemates, 
+  expensesCount, 
+  paymentsCount,
+  onAddPayment
+}: BalanceOverviewProps) {
   
-  const handleSettle = () => {
-    onSettleDebts();
+  const totalTransactions = expensesCount + paymentsCount;
+
+  const handleSettleSpecificDebt = (debt: Debt) => {
+    onAddPayment(debt.fromId, debt.toId, debt.amount);
   };
+
+  let mainButtonText = "Mark All as Settled";
+  if (debts.length === 0) {
+    if (totalTransactions > 0) {
+      mainButtonText = "Clear History";
+    } else {
+      mainButtonText = "All Settled!";
+    }
+  }
 
   return (
     <Card className="shadow-lg">
@@ -27,16 +48,16 @@ export function BalanceOverview({ debts, onSettleDebts, housemates, expensesCoun
           Balance Overview
         </CardTitle>
         <CardDescription>
-          {expensesCount > 0 
-            ? `Summary of who owes whom based on ${expensesCount} expense(s).`
-            : "No expenses recorded yet. Add expenses to see balances."}
+          {totalTransactions > 0 
+            ? `Summary of who owes whom based on ${totalTransactions} transaction(s).`
+            : "No transactions recorded yet. Add expenses or payments to see balances."}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {housemates.length === 0 ? (
            <p className="text-muted-foreground text-center py-4">Add housemates to calculate balances.</p>
-        ) : expensesCount === 0 ? (
-          <p className="text-muted-foreground text-center py-4">Add some expenses to see the balances.</p>
+        ) : totalTransactions === 0 ? (
+          <p className="text-muted-foreground text-center py-4">Add some expenses or payments to see the balances.</p>
         ) : debts.length === 0 ? (
           <p className="text-center py-4 text-green-600 font-medium">All settled up! No outstanding debts.</p>
         ) : (
@@ -52,20 +73,35 @@ export function BalanceOverview({ debts, onSettleDebts, housemates, expensesCoun
                     <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground" />
                     <span className="font-medium text-secondary-foreground">{debt.to}</span>
                   </div>
-                  <span className="font-semibold text-primary">
-                    ${debt.amount.toFixed(2)}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-semibold text-primary">
+                      ${debt.amount.toFixed(2)}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleSettleSpecificDebt(debt)}
+                      className="px-2 py-1 h-auto"
+                    >
+                      <CheckCircle className="w-3 h-3 mr-1" /> Settle
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
           </ScrollArea>
         )}
       </CardContent>
-      {expensesCount > 0 && (
+      {(totalTransactions > 0) && (
         <CardFooter>
-          <Button onClick={handleSettle} className="w-full" variant="default" disabled={debts.length === 0 && expensesCount === 0}>
+          <Button 
+            onClick={onClearAllTransactions} 
+            className="w-full" 
+            variant="default" 
+            disabled={totalTransactions === 0}
+          >
             <HandCoins className="w-4 h-4 mr-2" />
-            {debts.length === 0 ? "All Settled!" : "Mark All as Settled"}
+            {mainButtonText}
           </Button>
         </CardFooter>
       )}

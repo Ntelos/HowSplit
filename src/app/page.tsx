@@ -1,7 +1,8 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Housemate, Expense, Debt } from '@/types';
+import type { Housemate, Expense, Debt, Payment } from '@/types';
 import { Header } from '@/components/howsplit/Header';
 import { HousemateManager } from '@/components/howsplit/HousemateManager';
 import { ExpenseForm } from '@/components/howsplit/ExpenseForm';
@@ -11,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function HomePage() {
   const [housemates, setHousemates] = useState<Housemate[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const { toast } = useToast();
 
@@ -20,14 +22,15 @@ export default function HomePage() {
   };
 
   const removeHousemate = (id: string) => {
-    // Check if housemate is involved in any expenses
-    const isPayer = expenses.some(exp => exp.payerId === id);
-    const isParticipant = expenses.some(exp => exp.participantIds.includes(id));
+    const isPayerInExpenses = expenses.some(exp => exp.payerId === id);
+    const isParticipantInExpenses = expenses.some(exp => exp.participantIds.includes(id));
+    const isPayerInPayments = payments.some(p => p.fromId === id);
+    const isRecipientInPayments = payments.some(p => p.toId === id);
 
-    if (isPayer || isParticipant) {
+    if (isPayerInExpenses || isParticipantInExpenses || isPayerInPayments || isRecipientInPayments) {
       toast({
         title: "Cannot Remove Housemate",
-        description: "This housemate is involved in existing expenses. Settle debts or remove related expenses first.",
+        description: "This housemate is involved in existing expenses or payments. Settle debts or remove related transactions first.",
         variant: "destructive",
       });
       return;
@@ -48,8 +51,32 @@ export default function HomePage() {
     setExpenses((prev) => [...prev, newExpense]);
   };
 
+  const addPayment = (fromId: string, toId: string, amount: number) => {
+    const fromHousemate = housemates.find(hm => hm.id === fromId);
+    const toHousemate = housemates.find(hm => hm.id === toId);
+
+    if (!fromHousemate || !toHousemate) {
+      toast({ title: "Error", description: "Invalid housemate ID for payment.", variant: "destructive" });
+      return;
+    }
+
+    const newPayment: Payment = {
+      id: crypto.randomUUID(),
+      fromId,
+      toId,
+      amount,
+      date: new Date(),
+      description: `Settlement from ${fromHousemate.name} to ${toHousemate.name}`,
+    };
+    setPayments((prev) => [...prev, newPayment]);
+    toast({
+      title: "Payment Recorded",
+      description: `Payment of $${amount.toFixed(2)} from ${fromHousemate.name} to ${toHousemate.name} recorded.`,
+    });
+  };
+
   const calculateAndSetDebts = useCallback(() => {
-    if (housemates.length === 0 || expenses.length === 0) {
+    if (housemates.length === 0) {
       setDebts([]);
       return;
     }
@@ -67,37 +94,39 @@ export default function HomePage() {
       });
     });
 
-    const debtors: { id: string; amount: number }[] = [];
-    const creditors: { id: string; amount: number }[] = [];
+    payments.forEach(payment => {
+      balances[payment.fromId] = (balances[payment.fromId] || 0) + payment.amount; // Person who paid sees their balance improve (less negative or more positive)
+      balances[payment.toId] = (balances[payment.toId] || 0) - payment.amount;     // Person who received sees their balance decrease (less positive or more negative)
+    });
+
+    const debtorsList: { id: string; amount: number }[] = [];
+    const creditorsList: { id: string; amount: number }[] = [];
 
     housemates.forEach(hm => {
       const balance = balances[hm.id];
       if (balance < -0.001) { // Epsilon for float comparison
-        debtors.push({ id: hm.id, amount: balance });
+        debtorsList.push({ id: hm.id, amount: balance });
       } else if (balance > 0.001) {
-        creditors.push({ id: hm.id, amount: balance });
+        creditorsList.push({ id: hm.id, amount: balance });
       }
     });
     
-    debtors.sort((a, b) => a.amount - b.amount); // Most negative first
-    creditors.sort((a, b) => b.amount - a.amount); // Most positive first
+    debtorsList.sort((a, b) => a.amount - b.amount); // Most negative first
+    creditorsList.sort((a, b) => b.amount - a.amount); // Most positive first
 
     const newDebts: Debt[] = [];
     let debtorIndex = 0;
     let creditorIndex = 0;
 
-    while (debtorIndex < debtors.length && creditorIndex < creditors.length) {
-      const debtor = debtors[debtorIndex];
-      const creditor = creditors[creditorIndex];
+    while (debtorIndex < debtorsList.length && creditorIndex < creditorsList.length) {
+      const debtor = debtorsList[debtorIndex];
+      const creditor = creditorsList[creditorIndex];
       const amountToTransfer = Math.min(-debtor.amount, creditor.amount);
 
-      if (amountToTransfer < 0.01) { // Skip tiny amounts if they don't effectively change balances
+      if (amountToTransfer < 0.01) { 
          if (Math.abs(debtor.amount) < 0.01) debtorIndex++;
          if (Math.abs(creditor.amount) < 0.01) creditorIndex++;
          if (Math.abs(debtor.amount) >= 0.01 && Math.abs(creditor.amount) >= 0.01) {
-            // Both have significant amounts but min is tiny, means one is almost settled.
-            // This situation should ideally not happen with proper sorting and iteration.
-            // Force advance to prevent infinite loop on micro-amounts.
             if (Math.abs(debtor.amount) < Math.abs(creditor.amount)) debtorIndex++; else creditorIndex++;
          }
          continue;
@@ -109,7 +138,9 @@ export default function HomePage() {
       if (debtorHousemate && creditorHousemate) {
         newDebts.push({
           from: debtorHousemate.name,
+          fromId: debtorHousemate.id,
           to: creditorHousemate.name,
+          toId: creditorHousemate.id,
           amount: amountToTransfer,
         });
       }
@@ -125,17 +156,18 @@ export default function HomePage() {
       }
     }
     setDebts(newDebts);
-  }, [expenses, housemates]);
+  }, [expenses, payments, housemates]);
 
   useEffect(() => {
     calculateAndSetDebts();
   }, [calculateAndSetDebts]);
 
-  const settleDebtsHandler = () => {
-    setExpenses([]); // This will trigger useEffect to recalculate debts, resulting in an empty debts array.
+  const clearAllTransactionsHandler = () => {
+    setExpenses([]);
+    setPayments([]);
     toast({
-      title: "Debts Settled",
-      description: "All outstanding expenses have been cleared.",
+      title: "All Data Cleared",
+      description: "All expenses and payments have been cleared.",
     });
   };
 
@@ -147,12 +179,19 @@ export default function HomePage() {
     }
     const storedExpenses = localStorage.getItem('howsplit_expenses');
     if (storedExpenses) {
-      // Dates need to be parsed correctly from string
       const parsedExpenses = JSON.parse(storedExpenses).map((exp: Expense) => ({
         ...exp,
         date: new Date(exp.date),
       }));
       setExpenses(parsedExpenses);
+    }
+    const storedPayments = localStorage.getItem('howsplit_payments');
+    if (storedPayments) {
+      const parsedPayments = JSON.parse(storedPayments).map((p: Payment) => ({
+        ...p,
+        date: new Date(p.date),
+      }));
+      setPayments(parsedPayments);
     }
   }, []);
 
@@ -165,6 +204,10 @@ export default function HomePage() {
     localStorage.setItem('howsplit_expenses', JSON.stringify(expenses));
   }, [expenses]);
 
+  useEffect(() => {
+    localStorage.setItem('howsplit_payments', JSON.stringify(payments));
+  }, [payments]);
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -175,8 +218,15 @@ export default function HomePage() {
             <HousemateManager housemates={housemates} onAddHousemate={addHousemate} onRemoveHousemate={removeHousemate} />
             <ExpenseForm housemates={housemates} onAddExpense={addExpense} />
           </div>
-          <div className="sticky top-8"> {/* Make balance overview sticky on larger screens */}
-            <BalanceOverview debts={debts} onSettleDebts={settleDebtsHandler} housemates={housemates} expensesCount={expenses.length}/>
+          <div className="sticky top-8">
+            <BalanceOverview 
+              debts={debts} 
+              onClearAllTransactions={clearAllTransactionsHandler} 
+              housemates={housemates} 
+              expensesCount={expenses.length}
+              paymentsCount={payments.length}
+              onAddPayment={addPayment}
+            />
           </div>
         </div>
       </main>
