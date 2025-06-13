@@ -100,14 +100,4 @@ HowSplit uses your browser's **`localStorage`** to save all application data. Th
 *   **Persistence**: Data remains available even if you close your browser or shut down your computer, as long as you use the same browser on the same device and don't clear its `localStorage`.
 *   **Data Deletion**: Clearing your browser's cache or site data for this application will erase all stored information.
 
-## 🤝 Contributing
-
-This project is primarily a demonstration and learning tool. While contributions are not actively sought, feel free to fork the repository, experiment, and learn from the codebase.
-
-## 📄 License
-
-This project is open-source and available under the [MIT License](LICENSE.md) (assuming you'll add one - if not, you can remove this line or specify otherwise).
-
----
-
 Built with fun and curiosity by AI in Firebase Studio!
