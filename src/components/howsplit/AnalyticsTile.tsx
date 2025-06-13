@@ -18,9 +18,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+const ALL_MONTHS_VALUE = "all_months_filter_value"; // Unique value for "All Months"
+
 export function AnalyticsTile({ expenses, housemates }: { expenses: Expense[], housemates: Housemate[] }) {
   const [selectedYear, setSelectedYear] = useState<string | undefined>(undefined);
-  const [selectedMonth, setSelectedMonth] = useState<string>(""); // Empty string for "All Months"
+  const [selectedMonth, setSelectedMonth] = useState<string>(ALL_MONTHS_VALUE);
 
   const getHousemateName = (id: string): string => housemates.find(hm => hm.id === id)?.name || 'Unknown';
 
@@ -54,14 +56,12 @@ export function AnalyticsTile({ expenses, housemates }: { expenses: Expense[], h
 
   useEffect(() => {
     if (selectedYear) {
-        // If the current selectedMonth is not in the new list of availableMonths (or it's the initial load for the year),
-        // default to "All Months" or the first available month.
         const currentMonthIsValid = availableMonths.some(m => m.value === selectedMonth);
-        if (selectedMonth !== "" && !currentMonthIsValid) {
-             setSelectedMonth(""); // Default to "All Months" if current selection is invalid
+        if (selectedMonth !== ALL_MONTHS_VALUE && !currentMonthIsValid) {
+             setSelectedMonth(ALL_MONTHS_VALUE); 
         }
     } else {
-        setSelectedMonth(""); // No year selected, so no specific month
+        setSelectedMonth(ALL_MONTHS_VALUE); 
     }
   }, [selectedYear, availableMonths, selectedMonth]);
 
@@ -71,8 +71,7 @@ export function AnalyticsTile({ expenses, housemates }: { expenses: Expense[], h
     return expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       const yearMatch = selectedYear ? getYear(expenseDate).toString() === selectedYear : true;
-      // Month match: true if "All Months" (empty string or undefined) or if specific month matches
-      const monthMatch = (selectedMonth && selectedMonth !== "") ? getMonth(expenseDate).toString() === selectedMonth : true;
+      const monthMatch = (selectedMonth && selectedMonth !== ALL_MONTHS_VALUE) ? getMonth(expenseDate).toString() === selectedMonth : true;
       return yearMatch && monthMatch;
     });
   }, [expenses, selectedYear, selectedMonth]);
@@ -122,7 +121,7 @@ export function AnalyticsTile({ expenses, housemates }: { expenses: Expense[], h
           Overview of spending for the selected period.
         </CardDescription>
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
-          <Select value={selectedYear} onValueChange={(value) => { setSelectedYear(value); setSelectedMonth(""); /* Reset month on year change */ }} disabled={availableYears.length === 0}>
+          <Select value={selectedYear} onValueChange={(value) => { setSelectedYear(value); setSelectedMonth(ALL_MONTHS_VALUE); }} disabled={availableYears.length === 0}>
             <SelectTrigger className="w-full sm:w-[120px]" aria-label="Select Year">
               <CalendarDays className="w-4 h-4 mr-2 opacity-50" />
               <SelectValue placeholder="Year" />
@@ -139,7 +138,7 @@ export function AnalyticsTile({ expenses, housemates }: { expenses: Expense[], h
               <SelectValue placeholder="All Months" />
             </SelectTrigger>
             <SelectContent>
-              {selectedYear && <SelectItem value="">All Months</SelectItem>}
+              {selectedYear && <SelectItem value={ALL_MONTHS_VALUE}>All Months</SelectItem>}
               {availableMonths.map(month => (
                 <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
               ))}
@@ -153,7 +152,7 @@ export function AnalyticsTile({ expenses, housemates }: { expenses: Expense[], h
           <p className="text-3xl font-bold text-primary">
             ${analyticsData.totalSpending.toFixed(2)}
           </p>
-          {filteredExpenses.length === 0 && (selectedYear || selectedMonth !== "") && (
+          {filteredExpenses.length === 0 && (selectedYear || selectedMonth !== ALL_MONTHS_VALUE) && (
             <p className="text-sm text-muted-foreground mt-1">No expenses found for this period.</p>
           )}
         </div>
@@ -166,7 +165,7 @@ export function AnalyticsTile({ expenses, housemates }: { expenses: Expense[], h
                     <BarChart 
                         accessibilityLayer 
                         data={analyticsData.spendingByPayerChartData} 
-                        margin={{ top: 5, right: 10, left: -20, bottom: 40 }} // Increased bottom margin for labels
+                        margin={{ top: 5, right: 10, left: -20, bottom: 40 }} 
                     >
                         <CartesianGrid vertical={false} strokeDasharray="3 3" />
                         <XAxis 
@@ -177,7 +176,7 @@ export function AnalyticsTile({ expenses, housemates }: { expenses: Expense[], h
                             interval={0}
                             angle={-35}
                             textAnchor="end"
-                            height={50} // Give space for angled labels
+                            height={50} 
                             tick={{ fontSize: 12 }}
                         />
                         <YAxis 
@@ -204,5 +203,3 @@ export function AnalyticsTile({ expenses, housemates }: { expenses: Expense[], h
     </Card>
   );
 }
-
-    
