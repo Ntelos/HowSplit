@@ -191,7 +191,7 @@ export function AnalyticsTile({ expenses, housemates }: { expenses: Expense[], h
                             cursor={false}
                             content={<ChartTooltipContent hideLabel />}
                         />
-                        <Legend content={<ChartLegendContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
                         <Bar dataKey="totalPaid" fill="var(--color-totalPaid)" radius={4} />
                     </BarChart>
                 </ChartContainer>
