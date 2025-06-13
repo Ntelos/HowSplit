@@ -136,29 +136,20 @@ export default function HomePage() {
       const currentDebtor = debtorsList[debtorIndex];
       const currentCreditor = creditorsList[creditorIndex];
       
-      // Amount to transfer is the minimum of what the debtor owes or what the creditor is owed
       const amountToTransfer = Math.min(-currentDebtor.amount, currentCreditor.amount);
 
-      // If the amount to transfer is negligible, advance pointers accordingly
-      if (amountToTransfer < 0.01) { // Use a small epsilon for comparison
-        let advanced = false;
+      // If the amount to transfer is negligible, don't record it as a debt.
+      // Instead, advance the pointers of any party whose balance is already negligible and continue.
+      if (amountToTransfer < 0.01) { 
         if (Math.abs(currentDebtor.amount) < 0.01) {
           debtorIndex++;
-          advanced = true;
         }
         if (Math.abs(currentCreditor.amount) < 0.01) {
-          creditorIndex++;
-           advanced = true;
+           creditorIndex++;
         }
-        // If neither was negligible enough to advance, advance the one closer to zero
-        // or arbitrarily advance one if they are similarly small but not zero.
-        if (!advanced) {
-            if (Math.abs(currentDebtor.amount) < Math.abs(currentCreditor.amount)) {
-                debtorIndex++;
-            } else {
-                creditorIndex++;
-            }
-        }
+        // The 'if (!advanced)' block previously here was determined to be unreachable
+        // because if amountToTransfer < 0.01, at least one of the parties must have
+        // a balance < 0.01 in magnitude, causing their pointer to advance.
         continue; 
       }
       
@@ -175,7 +166,7 @@ export default function HomePage() {
         });
       }
 
-      // Update balances directly in the lists
+      // Update balances directly in the lists by modifying the amount property of the referenced objects
       currentDebtor.amount += amountToTransfer;
       currentCreditor.amount -= amountToTransfer;
 
@@ -274,5 +265,4 @@ export default function HomePage() {
     </div>
   );
 }
-
     
