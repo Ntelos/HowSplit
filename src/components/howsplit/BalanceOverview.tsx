@@ -40,6 +40,20 @@ export function BalanceOverview({
     }
   }
 
+  const expenseText = expensesCount === 1 ? `${expensesCount} expense` : `${expensesCount} expenses`;
+  const settlementText = paymentsCount === 1 ? `${paymentsCount} settlement` : `${paymentsCount} settlements`;
+
+  let descriptionText;
+  if (expensesCount > 0 && paymentsCount > 0) {
+    descriptionText = `Summary of balances based on ${expenseText} and ${settlementText}.`;
+  } else if (expensesCount > 0) {
+    descriptionText = `Summary of balances based on ${expenseText}.`;
+  } else if (paymentsCount > 0) {
+    descriptionText = `Summary of balances based on ${settlementText}.`;
+  } else {
+    descriptionText = "No transactions recorded yet. Add expenses or payments to see balances.";
+  }
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -48,9 +62,7 @@ export function BalanceOverview({
           Balance Overview
         </CardTitle>
         <CardDescription>
-          {totalTransactions > 0 
-            ? `Summary of who owes whom based on ${totalTransactions} transaction(s).`
-            : "No transactions recorded yet. Add expenses or payments to see balances."}
+          {descriptionText}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -98,7 +110,7 @@ export function BalanceOverview({
             onClick={onClearAllTransactions} 
             className="w-full" 
             variant="default" 
-            disabled={totalTransactions === 0}
+            disabled={totalTransactions === 0 && debts.length > 0} // Keep disabled if no transactions, unless there are somehow debts (should not happen)
           >
             <HandCoins className="w-4 h-4 mr-2" />
             {mainButtonText}
@@ -108,3 +120,4 @@ export function BalanceOverview({
     </Card>
   );
 }
+
