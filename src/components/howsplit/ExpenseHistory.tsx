@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2, ListChecks, ReceiptText, ArrowRightLeft, CalendarIcon, XCircle } from 'lucide-react';
+import { Trash2, ListChecks, ReceiptText, ArrowRightLeft, CalendarIcon, XCircle, Users } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, endOfDay } from "date-fns";
 import { useSettings } from '@/contexts/SettingsContext';
+import { Badge } from '@/components/ui/badge';
 
 interface DisplayTransaction {
   id: string;
@@ -19,6 +20,7 @@ interface DisplayTransaction {
   date: Date;
   descriptionText: string;
   detailsText: string;
+  participantsText?: string; // New field for participant names
   amount: number;
   type: 'expense' | 'payment';
   isDeletable: boolean;
@@ -39,6 +41,11 @@ export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense
   const getHousemateName = (id: string): string => {
     const housemate = housemates.find(hm => hm.id === id);
     return housemate ? housemate.name : 'Unknown';
+  };
+
+  const getParticipantNames = (participantIds: string[]): string => {
+    if (!participantIds || participantIds.length === 0) return "N/A";
+    return participantIds.map(id => getHousemateName(id)).join(', ');
   };
 
   let filteredExpenses = expenses;
@@ -63,6 +70,7 @@ export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense
       date: new Date(e.date),
       descriptionText: e.description,
       detailsText: `Paid by ${getHousemateName(e.payerId)}`,
+      participantsText: getParticipantNames(e.participantIds),
       amount: e.amount,
       type: 'expense' as 'expense',
       isDeletable: true,
@@ -150,7 +158,7 @@ export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense
             {(startDate || endDate) ? "No transactions found for the selected date range." : "Add expenses or record settlements to see them listed here."}
           </p>
         ) : (
-          <ScrollArea className="h-72">
+          <ScrollArea className="h-96"> {/* Increased height */}
             <Table>
               <TableHeader>
                 <TableRow>
@@ -158,6 +166,7 @@ export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense
                   <TableHead className="w-[50px]">Type</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Details</TableHead>
+                  <TableHead>Shared With</TableHead> {/* New Column Header */}
                   <TableHead className="text-right w-[100px]">Amount</TableHead>
                   <TableHead className="text-right w-[80px]">Actions</TableHead>
                 </TableRow>
@@ -168,12 +177,20 @@ export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense
                     <TableCell>{format(transaction.date, "MMM d, yyyy")}</TableCell>
                     <TableCell className="text-center">
                       {transaction.type === 'expense' ?
-                        <ReceiptText className="w-5 h-5 mx-auto text-primary" title="Expense"/> :
-                        <ArrowRightLeft className="w-5 h-5 mx-auto text-green-600" title="Settlement"/>
+                        <Badge variant="outline" className="border-primary/50 text-primary"><ReceiptText className="w-3 h-3 mr-1 inline-block"/>Expense</Badge> :
+                        <Badge variant="outline" className="border-green-600/50 text-green-600"><ArrowRightLeft className="w-3 h-3 mr-1 inline-block"/>Settlement</Badge>
                       }
                     </TableCell>
                     <TableCell className="font-medium">{transaction.descriptionText}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{transaction.detailsText}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground"> {/* New Column Cell */}
+                      {transaction.type === 'expense' && transaction.participantsText ? (
+                        <div className="flex items-center">
+                           <Users className="w-3 h-3 mr-1 text-muted-foreground"/>
+                           {transaction.participantsText}
+                        </div>
+                      ) : null}
+                    </TableCell>
                     <TableCell className="text-right">{selectedCurrency.symbol}{transaction.amount.toFixed(2)}</TableCell>
                     <TableCell className="text-right">
                       {transaction.isDeletable && (
@@ -197,3 +214,4 @@ export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense
     </Card>
   );
 }
+
