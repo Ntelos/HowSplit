@@ -183,7 +183,7 @@ export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense
                     </TableCell>
                     <TableCell className="font-medium">{transaction.descriptionText}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{transaction.detailsText}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground"> {/* New Column Cell */}
+                    <TableCell className="text-sm text-muted-foreground">
                       {transaction.type === 'expense' && transaction.participantsText ? (
                         <div className="flex items-center">
                            <Users className="w-3 h-3 mr-1 text-muted-foreground"/>
@@ -203,8 +203,7 @@ export function ExpenseHistory({ expenses, payments, housemates, onDeleteExpense
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       )}
-                    </TableCell>
-                  </TableRow>
+                    </TableCell></TableRow> 
                 ))}
               </TableBody>
             </Table>
