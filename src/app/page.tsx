@@ -8,6 +8,7 @@ import { HousemateManager } from '@/components/howsplit/HousemateManager';
 import { ExpenseForm } from '@/components/howsplit/ExpenseForm';
 import { BalanceOverview } from '@/components/howsplit/BalanceOverview';
 import { ExpenseHistory } from '@/components/howsplit/ExpenseHistory';
+import { AnalyticsTile } from '@/components/howsplit/AnalyticsTile';
 import { useToast } from "@/hooks/use-toast";
 
 export default function HomePage() {
@@ -116,6 +117,7 @@ export default function HomePage() {
 
     housemates.forEach(hm => {
       const balance = balances[hm.id];
+      // Using a small epsilon to handle floating point inaccuracies
       if (balance < -0.001) { 
         debtorsList.push({ id: hm.id, amount: balance });
       } else if (balance > 0.001) {
@@ -123,8 +125,8 @@ export default function HomePage() {
       }
     });
     
-    debtorsList.sort((a, b) => a.amount - b.amount); 
-    creditorsList.sort((a, b) => b.amount - a.amount); 
+    debtorsList.sort((a, b) => a.amount - b.amount); // Most negative first
+    creditorsList.sort((a, b) => b.amount - a.amount); // Most positive first
 
     const newDebts: Debt[] = [];
     let debtorIndex = 0;
@@ -134,9 +136,11 @@ export default function HomePage() {
       const currentDebtor = debtorsList[debtorIndex];
       const currentCreditor = creditorsList[creditorIndex];
       
+      // Amount to transfer is the minimum of what the debtor owes or what the creditor is owed
       const amountToTransfer = Math.min(-currentDebtor.amount, currentCreditor.amount);
 
-      if (amountToTransfer < 0.01) {
+      // If the amount to transfer is negligible, advance pointers accordingly
+      if (amountToTransfer < 0.01) { // Use a small epsilon for comparison
         let advanced = false;
         if (Math.abs(currentDebtor.amount) < 0.01) {
           debtorIndex++;
@@ -144,8 +148,10 @@ export default function HomePage() {
         }
         if (Math.abs(currentCreditor.amount) < 0.01) {
           creditorIndex++;
-          advanced = true;
+           advanced = true;
         }
+        // If neither was negligible enough to advance, advance the one closer to zero
+        // or arbitrarily advance one if they are similarly small but not zero.
         if (!advanced) {
             if (Math.abs(currentDebtor.amount) < Math.abs(currentCreditor.amount)) {
                 debtorIndex++;
@@ -169,12 +175,15 @@ export default function HomePage() {
         });
       }
 
+      // Update balances directly in the lists
       currentDebtor.amount += amountToTransfer;
       currentCreditor.amount -= amountToTransfer;
 
+      // If a debtor's balance is settled (or very close to zero), move to the next debtor
       if (Math.abs(currentDebtor.amount) < 0.01) {
         debtorIndex++;
       }
+      // If a creditor has received all they are owed (or very close to zero), move to the next creditor
       if (Math.abs(currentCreditor.amount) < 0.01) {
         creditorIndex++;
       }
@@ -246,7 +255,7 @@ export default function HomePage() {
               onDeleteExpense={deleteExpense} 
             />
           </div>
-          <div className="sticky top-8">
+          <div className="sticky top-8 space-y-8">
             <BalanceOverview 
               debts={debts} 
               onClearAllTransactions={clearAllTransactionsHandler} 
@@ -255,6 +264,7 @@ export default function HomePage() {
               paymentsCount={payments.length}
               onAddPayment={addPayment}
             />
+            <AnalyticsTile expenses={expenses} housemates={housemates} />
           </div>
         </div>
       </main>
@@ -264,3 +274,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
