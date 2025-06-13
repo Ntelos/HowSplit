@@ -138,8 +138,6 @@ export default function HomePage() {
       
       const amountToTransfer = Math.min(-currentDebtor.amount, currentCreditor.amount);
 
-      // If the amount to transfer is negligible, don't record it as a debt.
-      // Instead, advance the pointers of any party whose balance is already negligible and continue.
       if (amountToTransfer < 0.01) { 
         if (Math.abs(currentDebtor.amount) < 0.01) {
           debtorIndex++;
@@ -147,9 +145,6 @@ export default function HomePage() {
         if (Math.abs(currentCreditor.amount) < 0.01) {
            creditorIndex++;
         }
-        // The 'if (!advanced)' block previously here was determined to be unreachable
-        // because if amountToTransfer < 0.01, at least one of the parties must have
-        // a balance < 0.01 in magnitude, causing their pointer to advance.
         continue; 
       }
       
@@ -166,15 +161,12 @@ export default function HomePage() {
         });
       }
 
-      // Update balances directly in the lists by modifying the amount property of the referenced objects
       currentDebtor.amount += amountToTransfer;
       currentCreditor.amount -= amountToTransfer;
 
-      // If a debtor's balance is settled (or very close to zero), move to the next debtor
       if (Math.abs(currentDebtor.amount) < 0.01) {
         debtorIndex++;
       }
-      // If a creditor has received all they are owed (or very close to zero), move to the next creditor
       if (Math.abs(currentCreditor.amount) < 0.01) {
         creditorIndex++;
       }
@@ -235,7 +227,7 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 gap-8 items-start">
           <div className="space-y-8">
             <HousemateManager housemates={housemates} onAddHousemate={addHousemate} onRemoveHousemate={removeHousemate} />
             <ExpenseForm housemates={housemates} onAddExpense={addExpense} />
@@ -246,7 +238,7 @@ export default function HomePage() {
               onDeleteExpense={deleteExpense} 
             />
           </div>
-          <div className="sticky top-8 space-y-8">
+          <div className="space-y-8">
             <BalanceOverview 
               debts={debts} 
               onClearAllTransactions={clearAllTransactionsHandler} 
